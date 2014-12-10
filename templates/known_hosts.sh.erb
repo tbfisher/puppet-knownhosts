@@ -1,0 +1,32 @@
+#!/bin/bash
+
+kh=<%= @home %>/.ssh/known_hosts
+
+# strip port number
+host=$(echo '<%= @hostname %>' | awk '{ sub(/:.*/, ""); print }')
+ips=$(dig +short $host)
+
+# remove
+ssh-keygen -R $host
+for ip in $ips
+do
+    ssh-keygen -R $ip
+done
+
+# generate
+if [ '<%= @hostname %>' = $host ]; then
+    # no port
+    ssh-keyscan -H $host >> $kh
+    for ip in $ips
+    do
+        ssh-keyscan -H $ip >> $kh
+    done
+else
+    # yes port
+    port=$(echo '<%= @hostname %>' | awk '{ sub(/^[^:]+:/, ""); print }')
+    ssh-keyscan -p $port -H $host >> $kh
+    for ip in $ips
+    do
+        ssh-keyscan -p $port -H $ip >> $kh
+    done
+fi
